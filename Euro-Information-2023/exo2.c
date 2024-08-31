@@ -22,6 +22,13 @@ void add_server(char **servers, int *nb_servers, char *server) {
   *nb_servers += 1;
 }
 
+void free_all(char **servers, int m1, link_t *links) {
+  for (int i = 0; i < m1; i++)
+    free(servers[i]);
+  free(servers);
+  free(links);
+}
+
 int main() {
   char *s = malloc(1024);
 
@@ -76,6 +83,7 @@ int main() {
 	  nb_links_dest++;
       if (nb_links_dest == (m1-2)) {
 	printf("%s\n", name_server);
+	free_all(servers, m1, links);
 	return EXIT_SUCCESS;
       }
     }
