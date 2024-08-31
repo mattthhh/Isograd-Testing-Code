@@ -10,8 +10,6 @@
 int main() {
   char *s = malloc(1024);
 
-  int i = 0;
-
   while (scanf("%s", s) != EOF) {
   }
   free(s);
