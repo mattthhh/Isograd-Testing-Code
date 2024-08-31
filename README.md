@@ -7,3 +7,6 @@ Les codes sources présents dans ce répo sont des réponses pour les differents
 ## Build
 Pour build toutes les sources des réponses aux différents concours, alors il suffit de faire `make` à la racine du projet, qui aura pour but de créer un dossier "build" contenant des sous-dossiers avec le nom de tous les concours de code qui ont été compilés.
 Pour compiler les concours de code individuellement, alors il faudra se placer dans le bon dossier puis lancer `make` à l'intérieur de celui ci. Le build va créer des fichiers binaires avec le nom des exercices qui ont été compilés.
+
+## Sampels
+Chaque exercice est acompagné d'un sample, très souvent tiré de l'énnoncé de l'exercice, qui permet de vérifier la sortie du binaire qui viens d'être compilé. Les samples se trouvent dans le dossier nommé "samples" lui même dans le dossier lié au concours.
