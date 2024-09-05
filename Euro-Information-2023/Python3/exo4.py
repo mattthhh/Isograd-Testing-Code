@@ -158,8 +158,5 @@ def welzl(points, maxiterations=2000):
 
 points = np.array([[float(x) for x in line.split()] for line in lines[1:]])
 nsphere = welzl(points)
-print("For points: ", points)
-print("    Center is at: ", nsphere.center)
-print("    Radius is: ", np.sqrt(nsphere.sqradius), "\n")
 area = np.pi * nsphere.sqradius
-print(f"Area is: {area:.5f}") 
+print(f"{area:.5f}") 
