@@ -1,162 +1,55 @@
-#*******
-#* Read input from STDIN
-#* Use print to output your result to STDOUT.
-#* Use sys.stderr.write() to display debugging information to STDERR
-#* ***/
-import sys
+from math import pi
+from random import choice
 
-lines = []
-for line in sys.stdin:
-  lines.append(line.rstrip('\n'))
+def circle_from_three_points_or_less(P):
+    if len(P)==0:
+        return (0,0),0
+    elif len(P)==1:
+        p,=P
+        return p,0
+    elif len(P)==2:
+        return circle_from_two_points(*[coord for point in P for coord in point])
+    elif len(P)==3:
+        return circle_from_three_points(*[coord for point in P for coord in point])
 
-import numpy as np
+def circle_from_two_points(x1,y1,x2,y2):
+    return ((x1+x2)/2,(y1+y2)/2) , ((x1-x2)**2+(y1-y2)**2)/4
 
-class ProjectorStack:
-    """
-    Stack of points that are shifted / projected to put first one at origin.
-    """
-    def __init__(self, vec):
-        self.vs = np.array(vec)
-        
-    def push(self, v):
-        if len(self.vs) == 0:
-            self.vs = np.array([v])
-        else:
-            self.vs = np.append(self.vs, [v], axis=0)
-        return self
-    
-    def pop(self):
-        if len(self.vs) > 0:
-            ret, self.vs = self.vs[-1], self.vs[:-1]
-            return ret
-    
-    def __mul__(self, v):
-        s = np.zeros(len(v))
-        for vi in self.vs:
-            s = s + vi * np.dot(vi, v)
-        return s
-    
-class GaertnerBoundary:
-    """
-        GärtnerBoundary
+def circle_from_three_points(x1, y1, x2, y2, x3, y3) :
+    x12, x13 = x1 - x2, x1 - x3
+    y12, y13 = y1 - y2, y1 - y3
+    y31, y21 = y3 - y1, y2 - y1
+    x31, x21 = x3 - x1, x2 - x1
+ 
+    sx13 = x1*x1 - x3*x3
+    sy13 = y1*y1 - y3*y3
+    sx21 = x2*x2 - x1*x1
+    sy21 = y2*y2 - y1*y1
+         
+    X = -(sx13*y12+sy13*y12+sx21*y13+sy21*y13) / (2*(x31*y12-x21*y13))
+    Y = -(sx13*x12+sy13*x12+sx21*x13+sy21*x13) / (2*(y31*x12-y21*x13))
+ 
+    c = - x1*x1 - y1*y1 + 2*X*x1 + 2*Y*y1
+ 
+    r_squared = X*X+Y*Y-c
 
-    See the passage regarding M_B in Section 4 of Gärtner's paper.
-    """
-    def __init__(self, pts):
-        self.projector = ProjectorStack([])
-        self.centers, self.square_radii = np.array([]), np.array([])
-        self.empty_center = np.array([np.nan for _ in pts[0]])
+    return (X,Y),r_squared
 
+def welzl(P,R):
 
-def push_if_stable(bound, pt):
-    if len(bound.centers) == 0:
-        bound.square_radii = np.append(bound.square_radii, 0.0)
-        bound.centers = np.array([pt])
-        return True
-    q0, center = bound.centers[0], bound.centers[-1]
-    C, r2  = center - q0, bound.square_radii[-1]
-    Qm, M = pt - q0, bound.projector
-    Qm_bar = M * Qm
-    residue, e = Qm - Qm_bar, sqdist(Qm, C) - r2
-    z, tol = 2 * sqnorm(residue), np.finfo(float).eps * max(r2, 1.0)
-    isstable = np.abs(z) > tol
-    if isstable:
-        center_new  = center + (e / z) * residue
-        r2new = r2 + (e * e) / (2 * z)
-        bound.projector.push(residue / np.linalg.norm(residue))
-        bound.centers = np.append(bound.centers, np.array([center_new]), axis=0)
-        bound.square_radii = np.append(bound.square_radii, r2new)
-    return isstable
+    if not P or len(R)==3:
+        return circle_from_three_points_or_less(R)
 
-def pop(bound):
-    n = len(bound.centers)
-    bound.centers = bound.centers[:-1]
-    bound.square_radii = bound.square_radii[:-1]
-    if n >= 2:
-        bound.projector.pop()
-    return bound
+    p = choice(list(P))
 
+    c,r_squared = welzl(P-{p},R)
+    if (p[0]-c[0])**2 + (p[1]-c[1])**2 <= r_squared:
+        return c,r_squared
 
-class NSphere:
-    def __init__(self, c, sqr):
-        self.center = np.array(c)
-        self.sqradius = sqr
+    return welzl(P - {p},R | {p})
 
-def isinside(pt, nsphere, atol=1e-6, rtol=0.0):
-    r2, R2 = sqdist(pt, nsphere.center), nsphere.sqradius
-    return r2 <= R2 or np.isclose(r2, R2, atol=atol**2,rtol=rtol**2)
+P = {tuple(map(int,input().split())) for _ in range(int(input()))}
 
-def allinside(pts, nsphere, atol=1e-6, rtol=0.0):
-    for p in pts:
-        if not isinside(p, nsphere, atol, rtol):
-            return False
-    return True
+c,r_squared = welzl(P,set())
 
-def move_to_front(pts, i):
-    pt = pts[i]
-    for j in range(len(pts)):
-        pts[j], pt = pt, np.array(pts[j])
-        if j == i:
-            break
-    return pts
-
-def dist(p1, p2):
-    return np.linalg.norm(p1 - p2)
-
-def sqdist(p1, p2):
-    return sqnorm(p1 - p2)
-
-def sqnorm(p):
-    return np.sum(np.array([x * x for x in p]))
-
-def ismaxlength(bound):
-    len(bound.centers) == len(bound.empty_center) + 1
-
-def makeNSphere(bound):
-    if len(bound.centers) == 0: 
-        return NSphere(bound.empty_center, 0.0)
-    return NSphere(bound.centers[-1], bound.square_radii[-1])
-
-def _welzl(pts, pos, bdry):
-    support_count, nsphere = 0, makeNSphere(bdry)
-    if ismaxlength(bdry):
-        return nsphere, 0
-    for i in range(pos):
-        if not isinside(pts[i], nsphere):
-            isstable = push_if_stable(bdry, pts[i])
-            if isstable:
-                nsphere, s = _welzl(pts, i, bdry)
-                pop(bdry)
-                move_to_front(pts, i)
-                support_count = s + 1
-    return nsphere, support_count
-
-def find_max_excess(nsphere, pts, k1):
-    err_max, k_max = -np.inf, k1 - 1
-    for (k, pt) in enumerate(pts[k_max:]):
-        err = sqdist(pt, nsphere.center) - nsphere.sqradius
-        if  err > err_max:
-            err_max, k_max = err, k + k1
-    return err_max, k_max - 1
-
-def welzl(points, maxiterations=2000):
-    pts, eps = np.array(points, copy=True), np.finfo(float).eps
-    bdry, t = GaertnerBoundary(pts), 1
-    nsphere, s = _welzl(pts, t, bdry)
-    for i in range(maxiterations):
-        e, k = find_max_excess(nsphere, pts, t + 1)
-        if e <= eps:
-            break
-        pt = pts[k]
-        push_if_stable(bdry, pt)
-        nsphere_new, s_new = _welzl(pts, s, bdry)
-        pop(bdry)
-        move_to_front(pts, k)
-        nsphere = nsphere_new
-        t, s = s + 1, s_new + 1
-    return nsphere
-
-points = np.array([[float(x) for x in line.split()] for line in lines[1:]])
-nsphere = welzl(points)
-area = np.pi * nsphere.sqradius
-print(f"{area:.5f}") 
+print(f"{pi*r_squared:.5f}")
